@@ -4,13 +4,21 @@
   "tagline": "Build a bridge on a budget. Press Go. Hope.",
   "description": "Drag planks, timber, steel and rope across a canyon, then watch an odd little robot drive a cart full of parcels over whatever you made. It will hold, sag, creak or collapse in a heap, and every beam shows how close it is to snapping. 24 levels, a new canyon every day where the cheapest bridge wins, and a sandbox for building silly things.",
   "genre": "Physics builder",
-  "kinds": ["Physics"],
+  "kinds": [
+    "Physics"
+  ],
   "daily": true,
+  "difficulty": 3,
+  "difficultyNote": "Early bridges hold easily. Hitting par with every parcel delivered takes real engineering.",
   "verb": "Build",
   "tone": "orange",
   "players": "1 player",
   "session": "2–5 min levels",
-  "controls": ["Keyboard", "Mouse", "Touch"],
+  "controls": [
+    "Keyboard",
+    "Mouse",
+    "Touch"
+  ],
   "version": "1.0.0",
   "released": "2026-11-24",
   "updated": "2026-11-24",
