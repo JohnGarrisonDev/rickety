@@ -11,6 +11,7 @@ import { createRenderer } from './render.js'
 import { createInput } from './input.js'
 import { createUI } from './ui.js'
 import { audio } from './audio.js'
+import { dailyTalk, tellUs } from '../kit/talk.js'
 
 const stage = document.getElementById('stage'), canvas = document.getElementById('game')
 const save = makeSave(makeStore('rickety', defaults()), LEVELS)
@@ -302,8 +303,11 @@ function showResult() {
     const e = save.data.daily.days[G.date]
     d.dailyDone = !!e
     if (e) { d.best = e.cost; d.extra = G.date === today ? `Daily streak: <b>${save.streak(today)}</b>. Cheaper is better, so keep trimming.` : 'A past day: it does not count for the streak.' }
+    // Anonymous difficulty vote and "you beat N%" (by best cost), only for today's gap (or yesterday's, finished after midnight).
+    d.talk = gl.crossed && !!e && (G.date === today || G.date === shiftDate(today, -1))
   }
-  ui.result(d)
+  const talkEl = ui.result(d)
+  if (talkEl) dailyTalk(talkEl, { game: 'rickety', key: G.date, score: save.data.daily.days[G.date].cost, compact: true })
 }
 function copyResult() {
   const text = shareText(G.date, save.data.daily.days[G.date])
@@ -523,6 +527,7 @@ document.addEventListener('visibilitychange', () => { last = performance.now(); 
 
 // ---------- boot
 wireChrome({ stage })
+tellUs(document.getElementById('tell-us'), { game: 'rickety', issueUrl: 'https://github.com/JohnGarrisonDev/rickety/issues/new?template=feedback.yml' })
 new ResizeObserver(layout).observe(stage)
 layout()
 function boot() {

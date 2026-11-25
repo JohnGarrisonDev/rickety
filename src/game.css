@@ -97,6 +97,9 @@
 .btns.col > .btn { flex-direction: column; gap: 5px; padding: 11px 18px; }
 .btns.col > .btn span { font-size: 17px; }
 .panel :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+/* talk.js daily vote on the result panel: full width, centred like the rest of the panel */
+.panel .talk-daily { justify-self: stretch; text-align: center; margin-top: 4px; }
+.panel .talk-daily .talk-row { justify-content: center; gap: 6px; }
 
 /* title: daily streak strip */
 .streak { display: grid; gap: 7px; justify-items: center; margin-top: 4px; }

@@ -83,6 +83,9 @@ Rules that have held up:
 - **Snapshot rule:** `tests/daily.test.js` pins the level hash for four dates. If that test fails, you changed everyone's daily gap. That happens if you touch `dailyCandidate`, `makeLevel`, the auto-builder's designs or order, material numbers, vehicle numbers or anything in `step`. Only update the hashes on purpose, in a release whose changelog says the daily changed, and never in a way that changes a day already played if you can avoid it (version the generator with `DAILY_VERSION` and a date cut-over instead).
 - The streak counts a day once, on the day itself. Replaying a day only improves its best cost.
 
+## Player input (`kit/talk.js`)
+The hub's anonymous player-input widgets (copy of the kit, do not edit). `showResult` asks `ui.result` for a `[data-talk]` slot under the buttons when a daily run crossed (today's gap, or yesterday's finished after midnight) and calls `dailyTalk` with `key` = the gap's date and `score` = the day's best cost in dollars (lower is better; API board `gap`, the default). Only the first score is stored by the API; later, cheaper crossings just re-check the percentile. Boot calls `tellUs` into `#tell-us`. Both stay hidden when the API (`/api/v1/`) is unreachable.
+
 ## Testing in a browser
 - `?debug` exposes `window.__game`: `state()`, `goto(i)`, `daily(date)`, `sandbox(id)`, `title()`, `unlockAll()`, `add(ax, ay, bx, by, mat)`, `setDesign(beams)`, `solve()` (loads the reference from `tests/refs.js` on a dev server, else the auto-builder's), `go()`, `stop()`, `action(name, arg)`, `advance(seconds)` (runs the loop without waiting for frames; background tabs throttle `requestAnimationFrame`), `draw()`.
 - Before shipping: no console errors, play a level with the mouse, with the keyboard only, and with touch-style pointer events at phone size, reload mid-build and check the bridge is still there.

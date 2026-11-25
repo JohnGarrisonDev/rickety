@@ -176,7 +176,9 @@ export function createUI(stage, onAction) {
         <ul class="goals">${rows.join('')}</ul>
         <p class="stats"><span>Cost <b>${money(d.cost)}</b></span><i>·</i><span>Max stress <b>${Math.round(d.maxStress * 100)}%</b></span>${d.best != null ? `<i>·</i><span>Best <b>${money(d.best)}</b></span>` : ''}</p>
         ${d.extra ? `<p class="note">${d.extra}</p>` : ''}
-        <div class="btns">${btns.join('')}</div>`)
+        <div class="btns">${btns.join('')}</div>
+        ${d.talk ? '<div data-talk></div>' : ''}`)
+      return d.talk ? panel.querySelector('[data-talk]') : null
     },
     /** After Copy: say so, or (when the browser refuses the clipboard) show the text so it can be copied by hand. */
     copied(ok, text) {
