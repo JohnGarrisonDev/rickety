@@ -103,11 +103,18 @@
 
 /* title: daily streak strip */
 .streak { display: grid; gap: 7px; justify-items: center; margin-top: 4px; }
-.days { display: flex; gap: 5px; }
-.day { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; border: 2px dashed #b9ad97; color: #8c8170; }
+.days { display: grid; grid-template-columns: repeat(7, minmax(0, 44px)); justify-content: center; width: 100%; }
+/* 1.3: each day is a 44px-tall button (up to 44px wide; a seventh of the panel on a 360px phone, about 40px) around a
+   28px dot; tap it to play that day's gap. */
+.day { position: relative; display: grid; place-items: center; width: 100%; height: 44px; padding: 0; border: 0; background: none; color: #8c8170; cursor: pointer; font: inherit; -webkit-tap-highlight-color: transparent; }
+.day::before { content: ""; position: absolute; left: calc(50% - 14px); top: 8px; width: 28px; height: 28px; box-sizing: border-box; border-radius: 50%; border: 2px dashed #b9ad97; background: var(--p-paper); transition: transform 0.1s; }
+.day i { position: relative; }
+.day:hover::before { transform: scale(1.1); }
+.day:active::before { transform: scale(0.92); }
 .day i { font: 500 10.5px/1 var(--font-mono); font-style: normal; }
-.day.done { border: 2px solid var(--p-ink); background: var(--mint); color: var(--p-ink); }
-.day.today { box-shadow: 0 0 0 2px var(--p-paper), 0 0 0 4px var(--orange); }
+.day.done { color: var(--p-ink); }
+.day.done::before { border: 2px solid var(--p-ink); background: var(--mint); }
+.day.today::before { box-shadow: 0 0 0 2px var(--p-paper), 0 0 0 4px var(--orange); }
 .streak .note b { font-weight: 800; }
 
 /* stars */
@@ -206,3 +213,12 @@
   .scr-result .btns { margin-top: 2px; gap: 8px; }
 }
 @media (max-height: 470px) { .overlay.scr-result, .stage.is-full .overlay.scr-result { padding-top: max(6px, env(safe-area-inset-top, 0px)); } }
+/* Round 2 (1.3): in full screen on an upright phone, panels span the width, so keep them below the kit's 44px exit
+   button (top right). Sideways, panels are narrower than the stage and centred, clear of it already. */
+@media (orientation: portrait) {
+  .stage.is-full .overlay, .stage.is-full .overlay.scr-result { padding-top: max(60px, calc(env(safe-area-inset-top, 0px) + 56px)); }
+}
+/* The day strip's "tap a day" cue: part of the note normally; on short screens (where the note is hidden) a small
+   line of its own. */
+.streak .cue { display: none; font: 500 10.5px/1 var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--p-muted); }
+@media (max-height: 470px) { .streak { gap: 1px; margin-top: 0; } .streak .cue { display: block; } }

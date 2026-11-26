@@ -69,7 +69,7 @@ test('daily streak: one per day, broken by a missed day, untouched by past days'
   assert.equal(st.data.daily.best, 2)
 })
 
-test('designs in progress are stored per level; only one daily design is kept', () => {
+test('designs in progress are stored per level; the seven most recent daily designs are kept', () => {
   const st = store({ designs: { c1: [[0, 0, 2, 0, 'plank']] } }), save = makeSave(st, LEVELS)
   assert.deepEqual(save.getDesign('c1'), [[0, 0, 2, 0, 'plank']])
   assert.deepEqual(save.getDesign('c9'), [])
@@ -78,7 +78,12 @@ test('designs in progress are stored per level; only one daily design is kept', 
   beams[0][4] = 'rope' // the store keeps its own copy
   assert.deepEqual(save.getDesign('daily:2026-11-24'), [[0, 0, 2, 0, 'plank']])
   save.setDesign('daily:2026-11-25', [])
-  assert.equal(st.data.designs['daily:2026-11-24'], undefined)
+  assert.deepEqual(save.getDesign('daily:2026-11-24'), [[0, 0, 2, 0, 'plank']], 'playing another day keeps this one')
+  for (let d = 26; d <= 30; d++) save.setDesign(`daily:2026-11-${d}`, [])
+  assert.deepEqual(save.getDesign('daily:2026-11-24'), [[0, 0, 2, 0, 'plank']], 'seven days kept')
+  save.setDesign('daily:2026-12-01', [])
+  assert.equal(st.data.designs['daily:2026-11-24'], undefined, 'the oldest goes once there are eight')
+  assert.equal(Object.keys(st.data.designs).filter((k) => k.startsWith('daily:')).length, 7)
   assert.ok(st.data.designs.c1)
 })
 
@@ -88,4 +93,18 @@ test('makeSave cleans whatever the store loaded', () => {
   assert.deepEqual(save.data.levels, {})
   assert.equal(save.data.speed, 1)
   assert.equal(save.totalStars(), 0)
+})
+
+test('1.3 tightened pars: stars already earned under the old par are kept', () => {
+  // c23 "The Big One" had par $15,000 in 1.2 and $11,300 from 1.3. A three-star crossing for $14,000 stays three stars.
+  const old = { v: 1, levels: { c23: { stars: 3, cost: 14000 } }, designs: {}, daily: { days: {}, streak: 0, best: 0, last: '' }, speed: 1, cur: null }
+  const clean = sanitise(JSON.parse(JSON.stringify(old)))
+  assert.deepEqual(clean.levels.c23, { stars: 3, cost: 14000 })
+  const data = { ...clean }
+  const save = makeSave({ data, save() {} }, LEVELS)
+  assert.equal(save.stars('c23'), 3)
+  // a later two-star crossing (cheaper, but over the new par) improves the best cost and never lowers the stars
+  save.recordLevel('c23', 2, 12000)
+  assert.deepEqual(save.data.levels.c23, { stars: 3, cost: 12000 })
+  assert.equal(LEVELS.find((l) => l.id === 'c23').par, 11300)
 })

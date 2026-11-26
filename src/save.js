@@ -107,7 +107,9 @@ export function makeSave(store, levels) {
     getDesign: (key) => (Array.isArray(data.designs[key]) ? data.designs[key] : []),
     setDesign(key, beams) {
       data.designs[key] = beams.map((b) => b.slice())
-      for (const k of Object.keys(data.designs)) if (k.startsWith('daily:') && k !== key && key.startsWith('daily:')) delete data.designs[k]
+      // Keep the bridges for the seven most recent daily gaps (the archive strip), so playing a past day does not wipe today's.
+      const daily = Object.keys(data.designs).filter((k) => k.startsWith('daily:')).sort()
+      while (daily.length > 7) delete data.designs[daily.shift()]
       store.save()
     },
   }

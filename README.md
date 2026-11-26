@@ -34,7 +34,8 @@ src/physics.js      the simulation: particles, beams, vehicles, contacts, breaki
 src/design.js       build rules: what a design is, what may be added, cost, undo history. No DOM
 src/levels.js       the level format, the 24 campaign levels and the 3 sandbox maps. No DOM
 src/autobuild.js    draws stock bridges and tests them headless (daily solvability, reference designs). No DOM
-src/daily.js        the daily generator, date helpers, share text. No DOM
+src/daily.js        the daily generator (versioned by date), date helpers, share text. No DOM
+src/daily-table.js  pre-generated daily gaps (tools/daily-table.mjs), so the daily opens instantly
 src/save.js         save schema, repair of bad data, stars, unlocks, streak. No DOM
 src/render.js       canvas drawing, camera, particles
 src/input.js        pointer gestures (grab, tap, pan, pinch, wheel)
@@ -42,7 +43,7 @@ src/ui.js           DOM overlays: HUD, toolbars, title, level select, result car
 src/audio.js        synth sound effects
 kit/                copy of the Oddvale kit (do not edit; re-copy from the hub)
 tests/              node tests, plus refs.js (one known three-star bridge per campaign level)
-tools/              dev scripts: make-refs, probe, try, trace, daily
+tools/              dev scripts: make-refs, probe, try, trace, daily, daily-table, tighten
 ```
 
 See [AGENTS.md](AGENTS.md) for the physics in detail, the level format, how to add levels and the ideas backlog.

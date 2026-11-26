@@ -4,7 +4,7 @@ import { C, makeStore, wireChrome, haptic } from '../kit/kit.js'
 import { LEVELS, SANDBOX, CHAPTERS, makeLevel } from './levels.js'
 import { H, MATERIALS, createWorld, step, summary, timeLimit, countParcels } from './physics.js'
 import { canAdd, checkDesign, cleanDesign, designCost, makeHistory, snapTarget, hasJoint, beamLen, jointsOf } from './design.js'
-import { dailyLevel, dateKey, shiftDate, shareText, money } from './daily.js'
+import { dailyLevel, dateKey, shiftDate, isDateKey, shareText, money } from './daily.js'
 import { autoBuild } from './autobuild.js'
 import { makeSave, defaults, goals } from './save.js'
 import { createRenderer } from './render.js'
@@ -78,6 +78,9 @@ function openCampaign(i) {
   G.index = i
   openLevel('campaign', LEVELS[i], LEVELS[i].id, `Level ${i + 1} · ${CHAPTERS[LEVELS[i].chapter]}`)
 }
+/** The daily archive: today and the six days before it (the title's day strip). */
+const ARCHIVE_DAYS = 7
+function inArchive(date) { const today = dateKey(); return isDateKey(date) && date <= today && date > shiftDate(today, -ARCHIVE_DAYS) }
 function openDaily(date = dateKey()) {
   G.date = date
   openLevel('daily', dailyLevel(date).level, 'daily:' + date, `Daily gap · ${date}`)
@@ -342,6 +345,7 @@ function onAction(act, arg) {
   switch (act) {
     case 'campaign': openCampaign(save.nextIndex()); break
     case 'daily': ui.toast('Surveying today\'s canyon...', 0); setTimeout(() => { ui.toast(''); openDaily() }, 30); break
+    case 'day': if (inArchive(arg)) openDaily(arg); break
     case 'select': selectScreen(); break
     case 'sandbox': G.screen === 'play' ? (stopIfRunning(), sandboxScreen()) : sandboxScreen(); break
     case 'sand': openSandbox(arg); break
@@ -503,6 +507,9 @@ document.addEventListener('keydown', (e) => {
   if (e.altKey) return
   const mod = e.ctrlKey || e.metaKey
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key
+  // On the iPhone full-screen path (kit "focus" mode) the kit's own Escape handler leaves full screen; that is all the
+  // first Escape should do, so the pause menu does not open as well.
+  if (k === 'Escape' && document.documentElement.classList.contains('stage-focus')) return
   if (ui.screen) {
     const btns = [...stage.querySelectorAll('.overlay button:not([disabled])')], at = btns.indexOf(document.activeElement)
     if (k === 'Escape') {
@@ -550,7 +557,7 @@ function boot() {
   const cur = save.data.cur
   if (cur && cur.mode === 'campaign') { const i = LEVELS.findIndex((l) => l.id === cur.id); if (i >= 0 && save.unlocked(i)) return openCampaign(i) }
   if (cur && cur.mode === 'sandbox' && SANDBOX.some((l) => l.id === cur.id)) return openSandbox(cur.id)
-  if (cur && cur.mode === 'daily' && cur.id === dateKey()) return openDaily()
+  if (cur && cur.mode === 'daily' && inArchive(cur.id)) return openDaily(cur.id)
   titleScreen()
 }
 boot()

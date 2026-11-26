@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0 (2026-11-26)
+- Play the last week of daily gaps: tap any day in the strip on the title screen. Past days never count for your streak, but your best cost for each day is kept, and each day keeps its own half-built bridge.
+- The daily gap opens instantly. It used to be worked out in your browser the first time you opened it, which could take most of a second.
+- Fewer big steel jobs: from 28 November, a daily gap whose cheapest stock bridge is mostly steel is swapped for the next canyon in line. Every gap up to 27 November is exactly as it was.
+- The shared result now ends with the full link, https://games.oddvale.com/rickety/.
+- On iPhone full screen, Escape just leaves full screen (it used to open the pause menu too). Panels keep clear of the exit button in full screen on an upright phone, and a phone held sideways shows "Tap a day to play it" under the day strip.
+- Tighter pars on nine levels (Hang On, Maypole, Steel Yourself, Wonky Canyon, Big Rig Bridge, Lava Lunch, Truck Stop, The Big One, Double Decker). Each new par has a known bridge that earns all three stars. Stars you already earned stay yours.
+
 ## 1.2.0 (2026-11-26)
 Plays better on phones.
 - Full screen on every phone, iPhone included: tap "Play full screen" under the game. It works upright or sideways, and the view re-fits when you turn the phone.

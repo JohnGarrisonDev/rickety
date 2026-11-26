@@ -62,10 +62,14 @@ export const CHAPTERS = ['First planks', 'Ropes and steel', 'Odd jobs']
 const PT = ['plank', 'timber'], PTR = ['plank', 'timber', 'rope'], PTS = ['plank', 'timber', 'steel'], ALL = ['plank', 'timber', 'steel', 'rope']
 
 // [budget, par] per level, from tools/make-refs.mjs (par: the stored three-star reference design, rounded up; budget: 40% above it, 15% on the squeeze levels).
+// [budget, par]. Budgets come from tools/make-refs.mjs. 1.3 tightened nine pars (c9, c10, c12, c14, c16, c19, c22,
+// c23, c24) to trimmed reference bridges from tools/tighten.mjs (tests/refs.js proves each one earns three stars),
+// cutting no par by more than 25% in one release. c20 keeps its par so it stays a squeeze level (budget < 1.2 x par).
+// Stars already earned are kept by the save.
 const MONEY = [
   [400, 200], [2700, 2000], [4300, 3100], [2700, 1900], [7000, 5000], [5800, 4200], [7300, 5200], [8900, 6400],
-  [6400, 4600], [7800, 5600], [2300, 2000], [20400, 14600], [5800, 4200], [14000, 10000], [8900, 6400], [11700, 8300],
-  [2200, 1600], [11100, 7900], [16800, 12000], [5500, 4800], [6900, 4900], [17200, 12300], [21000, 15000], [37100, 26500],
+  [6400, 3500], [7800, 4600], [2300, 2000], [20400, 12300], [5800, 4200], [14000, 7500], [8900, 6400], [11700, 7900],
+  [2200, 1600], [11100, 7900], [16800, 9600], [5500, 4800], [6900, 4900], [17200, 9300], [21000, 11300], [37100, 19900],
 ]
 
 const RAW = [

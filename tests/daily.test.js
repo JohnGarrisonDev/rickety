@@ -1,7 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { makeRng } from '../kit/kit.js'
-import { dailyLevel, dailyCandidate, dailySeed, dateKey, isDateKey, shiftDate, levelHash, shareText, money } from '../src/daily.js'
+import { dailyLevel, dailyCandidate, dailySeed, dateKey, isDateKey, shiftDate, levelHash, shareText, money, generateDaily, tableDaily, tableRow, dailyVersion, DAILY_V2_FROM, steelShare } from '../src/daily.js'
+import { DAILY_TABLE } from '../src/daily-table.js'
 import { autoBuild, candidates, deckNodes } from '../src/autobuild.js'
 import { simulate } from '../src/physics.js'
 import { checkDesign } from '../src/design.js'
@@ -51,9 +52,48 @@ test('every daily gap is solvable: the auto-builder crosses it within budget, wi
 })
 
 // Snapshot: if any of these change, every player's daily gap changed. Only update them on purpose (see AGENTS.md).
-const SNAPSHOT = { '2026-11-24': 1761365258, '2026-12-25': 2655669589, '2027-03-14': 452888248, '2028-02-29': 2093691685 }
+// Generator 1 (the 1.0-1.2 generator) must keep producing exactly these.
+const SNAPSHOT_V1 = { '2026-11-24': 1761365258, '2026-12-25': 2655669589, '2027-03-14': 452888248, '2028-02-29': 2093691685 }
+// What players get. 1.3 changed 2028-02-29 on purpose: under generator 1 it was a $29,020 bridge, 91% steel.
+const SNAPSHOT = { '2026-11-24': 1761365258, '2026-12-25': 2655669589, '2027-03-14': 452888248, '2028-02-29': 3825834858 }
 test('snapshot hashes for a few dates', () => {
+  for (const [date, hash] of Object.entries(SNAPSHOT_V1)) assert.equal(levelHash(generateDaily(date, 1).level), hash, `generator 1 changed for ${date}`)
   for (const [date, hash] of Object.entries(SNAPSHOT)) assert.equal(levelHash(dailyLevel(date).level), hash, `the daily gap for ${date} changed`)
+})
+
+const same = (a, b) => JSON.stringify(a.level) === JSON.stringify(b.level) && a.refCost === b.refCost && a.tries === b.tries
+
+test('no published daily changes: every date up to 2026-11-27 comes out exactly as the 1.2 generator made it', () => {
+  assert.equal(DAILY_V2_FROM, '2026-11-28')
+  // Everything from a month before launch (2026-11-24) to the cut-over, through the path the game uses (the table
+  // where it has the date, else the generator), compared field for field with generator 1.
+  for (let d = '2026-10-25'; d <= '2026-11-27'; d = shiftDate(d, 1)) {
+    assert.equal(dailyVersion(d), 1, d)
+    assert.ok(same(dailyLevel(d), generateDaily(d, 1)), `the daily gap for ${d} changed`)
+  }
+})
+
+test('generator 2 only passes over steel-heavy Cart days', () => {
+  for (let d = '2026-11-28', i = 0; i < 40; i++, d = shiftDate(d, 1)) {
+    const v1 = generateDaily(d, 1), v2 = generateDaily(d, 2)
+    if (same(v1, v2)) continue
+    const ref = autoBuild(v1.level, { margin: 0.85 })
+    assert.ok(v1.level.vehicles.every((v) => v.type === 'cart') && steelShare(ref.design) > 0.4, `${d} changed without being steel-heavy`)
+  }
+})
+
+test('the pre-generated table matches the generator byte for byte', () => {
+  const days = DAILY_TABLE.rows.length
+  assert.ok(days >= 365, 'the table covers at least a year')
+  assert.equal(shiftDate(DAILY_TABLE.from, days - 1), DAILY_TABLE.to)
+  assert.equal(tableRow(shiftDate(DAILY_TABLE.from, -1)), null); assert.equal(tableRow(shiftDate(DAILY_TABLE.to, 1)), null)
+  assert.equal(tableDaily(shiftDate(DAILY_TABLE.to, 1)), null)
+  // the first two weeks and every 23rd day after (a full check is `node tools/daily-table.mjs` and a diff)
+  for (let i = 0; i < days; i += i < 14 ? 1 : 23) {
+    const d = shiftDate(DAILY_TABLE.from, i), t = tableDaily(d)
+    assert.ok(t, `${d} missing from the table`)
+    assert.ok(same(t, generateDaily(d)), `the table is stale for ${d}: re-run tools/daily-table.mjs`)
+  }
 })
 
 test('the auto-builder draws legal bridges', () => {
@@ -72,6 +112,6 @@ test('the auto-builder draws legal bridges', () => {
 test('share text is short, spoiler-free and ends with the URL', () => {
   assert.equal(money(4310), '$4,310'); assert.equal(money(950), '$950'); assert.equal(money(1234567), '$1,234,567')
   const t = shareText('2026-11-24', { cost: 4310, kept: 3, parcels: 3 })
-  assert.equal(t, 'Rickety 2026-11-24 · crossed for $4,310 · 3/3 parcels\ngames.oddvale.com/rickety')
-  assert.ok(shareText('2026-11-24', null).endsWith('games.oddvale.com/rickety'))
+  assert.equal(t, 'Rickety 2026-11-24 · crossed for $4,310 · 3/3 parcels\nhttps://games.oddvale.com/rickety/')
+  assert.ok(shareText('2026-11-24', null).endsWith('\nhttps://games.oddvale.com/rickety/'))
 })

@@ -117,7 +117,8 @@ export function createUI(stage, onAction) {
 
     title(d) {
       const dl = d.daily
-      const days = d.history.map((h) => `<span class="day${h.done ? ' done' : ''}${h.today ? ' today' : ''}" title="${h.date}${h.done ? ': ' + money(h.cost) : ''}"><i>${h.label}</i></span>`).join('')
+      // The last seven days are buttons: today's gap, or a past one to play again (past days never count for the streak).
+      const days = d.history.map((h) => `<button class="day${h.done ? ' done' : ''}${h.today ? ' today' : ''}" type="button" data-act="day" data-arg="${h.date}" title="${h.date}${h.done ? ': ' + money(h.cost) : ''}" aria-label="${h.today ? 'Today' : h.date}${h.done ? ', crossed for ' + money(h.cost) : ', not crossed'}"><i>${h.label}</i></button>`).join('')
       ui.show('title', `
         <span class="eyebrow">Physics builder</span>
         <h2 class="logo-title">Rick<em>e</em>ty</h2>
@@ -130,7 +131,7 @@ export function createUI(stage, onAction) {
             <button class="btn small" type="button" data-act="sandbox">Sandbox</button>
           </div>
         </div>
-        <div class="streak"><span class="days">${days}</span><span class="note">Daily streak <b>${d.streak}</b> · best <b>${d.bestStreak}</b></span></div>`)
+        <div class="streak"><span class="days">${days}</span><span class="cue">Tap a day to play it</span><span class="note">Daily streak <b>${d.streak}</b> · best <b>${d.bestStreak}</b> · tap a day to play it</span></div>`)
     },
     select(d) {
       const chapters = d.chapters.map((name, c) => `<h3>${c + 1}. ${esc(name)}</h3><div class="grid">${d.levels.slice(c * 8, c * 8 + 8).map((l) => l.open

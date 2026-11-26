@@ -6,8 +6,21 @@
 import { makeRng, hashString } from '../kit/kit.js'
 import { makeLevel } from './levels.js'
 import { autoBuild } from './autobuild.js'
+import { designCost } from './design.js'
+import { DAILY_TABLE } from './daily-table.js'
 
-export const DAILY_VERSION = 1
+/**
+ * Generator versions, chosen by date so a day never changes once it may have been played:
+ *  1  (up to 2026-11-27) the first solvable candidate wins.
+ *  2  (from 2026-11-28)  same, but a candidate whose reference bridge spends more than 40% of its cost on steel
+ *     (Cart days only) is passed over for the next one, so fewer days are big steel jobs. If every candidate is
+ *     steel-heavy the first of them is used. Days whose first solvable candidate was not steel-heavy are unchanged.
+ */
+export const DAILY_VERSION = 2
+export const DAILY_V2_FROM = '2026-11-28'
+export const dailyVersion = (date) => (date >= DAILY_V2_FROM ? 2 : 1)
+const STEEL_HEAVY = 0.4
+const HINT = 'Cheapest bridge that gets the parcels across wins the day.'
 const pad = (n) => String(n).padStart(2, '0')
 /** Local calendar date as YYYY-MM-DD. */
 export const dateKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
@@ -50,22 +63,67 @@ export function dailyCandidate(rng) {
 const FALLBACK = { w: 8, rh: 0, depth: 8, pit: 'water', name: 'Plain Old Gap', rocks: [[4, -2]], anchors: [], materials: ['plank', 'timber'], vehicles: [{ type: 'cart' }] }
 const cache = new Map()
 
-/** The level for a date. Returns { level, refCost, tries }. */
-export function dailyLevel(date) {
-  if (cache.has(date)) return cache.get(date)
+/** Share of a design's cost that is steel. */
+export function steelShare(design) {
+  const total = designCost(design)
+  return total ? designCost({ beams: design.beams.filter((b) => b[4] === 'steel') }) / total : 0
+}
+const steelHeavy = (level, ref) => level.vehicles.every((v) => v.type === 'cart') && steelShare(ref.design) > STEEL_HEAVY
+
+/**
+ * Generate a date's gap from scratch: draw candidates and drive the auto-builder over each (slow: up to about a
+ * second). `version` defaults to the one for that date. Returns { level, refCost, tries } (tries 0 = fallback canyon).
+ */
+export function generateDaily(date, version = dailyVersion(date)) {
   const rng = makeRng(dailySeed(date))
-  let out = null
+  let out = null, heavy = null
   for (let tries = 1; tries <= 8 && !out; tries++) {
     const o = dailyCandidate(rng)
-    const level = makeLevel({ ...o, id: 'daily', hint: 'Cheapest bridge that gets the parcels across wins the day.' })
+    const level = makeLevel({ ...o, id: 'daily', hint: HINT })
     const ref = autoBuild(level, { margin: 0.85 })
-    if (ref) out = finish(level, ref, tries)
+    if (!ref) continue
+    if (version >= 2 && steelHeavy(level, ref)) { if (!heavy) heavy = { level, ref, tries }; continue }
+    out = finish(level, ref, tries)
   }
+  if (!out && heavy) out = finish(heavy.level, heavy.ref, heavy.tries)
   if (!out) {
-    const level = makeLevel({ ...FALLBACK, id: 'daily', hint: 'Cheapest bridge that gets the parcels across wins the day.' })
+    const level = makeLevel({ ...FALLBACK, id: 'daily', hint: HINT })
     out = finish(level, autoBuild(level, { margin: 1 }) || { cost: 2000 }, 0)
   }
   out.level.date = date
+  return out
+}
+
+/** [tries, refCost] for a date from the pre-generated table, or null outside it. */
+export function tableRow(date) {
+  const t = DAILY_TABLE
+  if (!isDateKey(date) || date < t.from) return null
+  const [y, m, d] = date.split('-').map(Number), [fy, fm, fd] = t.from.split('-').map(Number)
+  const i = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(fy, fm - 1, fd)) / 86400000)
+  const row = t.rows[i]
+  return row ? row : null
+}
+
+/**
+ * The same gap rebuilt from the table: replay the rng to the winning candidate and take the budget from the stored
+ * reference cost, with no physics at all. tests/daily.test.js checks it matches generateDaily byte for byte.
+ */
+export function tableDaily(date) {
+  const row = tableRow(date)
+  if (!row || row[0] < 1) return null
+  const [tries, cost] = row
+  const rng = makeRng(dailySeed(date))
+  let o = null
+  for (let k = 0; k < tries; k++) o = dailyCandidate(rng)
+  const out = finish(makeLevel({ ...o, id: 'daily', hint: HINT }), { cost }, tries)
+  out.level.date = date
+  return out
+}
+
+/** The level for a date. Returns { level, refCost, tries }. Instant for dates in the table, else generated. */
+export function dailyLevel(date) {
+  if (cache.has(date)) return cache.get(date)
+  const out = tableDaily(date) || generateDaily(date)
   if (cache.size > 12) cache.clear()
   cache.set(date, out)
   return out
@@ -85,5 +143,5 @@ export const money = (n) => '$' + String(Math.round(n)).replace(/\B(?=(\d{3})+(?
 /** Spoiler-free result text for the Copy button. */
 export function shareText(date, entry) {
   const first = entry ? `crossed for ${money(entry.cost)} · ${entry.kept}/${entry.parcels} parcels` : 'still building'
-  return `Rickety ${date} · ${first}\ngames.oddvale.com/rickety`
+  return `Rickety ${date} · ${first}\nhttps://games.oddvale.com/rickety/`
 }
