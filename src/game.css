@@ -178,9 +178,6 @@
 @media (max-height: 470px) { .panel { padding: 10px 16px 12px; gap: 5px; } .panel .logo-title { font-size: 40px; } .panel .how, .streak .note { display: none; } .btns.col > .btn { padding: 7px 14px; } }
 
 /* ---- touch and full screen (1.2.0) */
-/* Kit workaround: the "Play full screen" button's icon has no size in kit/shell.css, so it renders huge and wraps the label. */
-.stage-cta { white-space: nowrap; gap: 8px; }
-.stage-cta svg { width: 18px; height: 18px; flex: none; }
 /* pressed states */
 .tool:active:not([disabled]), .hud-btn:active { transform: scale(.92); background: var(--yellow); color: var(--p-ink); border-color: var(--yellow); }
 .mat:active { transform: scale(.96); }

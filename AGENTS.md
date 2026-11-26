@@ -87,7 +87,7 @@ Rules that have held up:
 The hub's anonymous player-input widgets (copy of the kit, do not edit). `showResult` asks `ui.result` for a `[data-talk]` slot under the buttons when a daily run crossed (today's gap, or yesterday's finished after midnight) and calls `dailyTalk` with `key` = the gap's date and `score` = the day's best cost in dollars (lower is better; API board `gap`, the default). Only the first score is stored by the API; later, cheaper crossings just re-check the percentile. Boot calls `tellUs` into `#tell-us`. Both stay hidden when the API (`/api/v1/`) is unreachable.
 
 ## Phones and full screen
-- `wireChrome({ stage })` (kit) gives native full screen or, on iPhone, the focus mode; both set `.stage.is-full`. `src/game.css` pads the HUD, bars, toast and overlays with `env(safe-area-inset-*)` there and keeps the HUD clear of the kit's exit button. It also sizes the kit's "Play full screen" icon (missing from `kit/shell.css`).
+- `wireChrome({ stage })` (kit) gives native full screen or, on iPhone, the focus mode; both set `.stage.is-full`. `src/game.css` pads the HUD, bars, toast and overlays with `env(safe-area-inset-*)` there and keeps the HUD clear of the kit's exit button.
 - `layout()` measures the HUD and the bottom bar against the canvas rect (the canvas is inset by the safe areas in full screen) to set `R.inset`. When the stage flips between tall and wide it re-runs `fitZoom()`, unless the player has zoomed or panned (`G.autoZoom`).
 - Touch drag: the target floats 46 px above the finger and the loupe shows it magnified. Dragging onto the toolbar/HUD (`d.off`) cancels on release, with a toast.
 - `haptic()` on place, the first snap and the end of a run.
