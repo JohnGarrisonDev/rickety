@@ -54,8 +54,17 @@ export function createInput(canvas, h) {
   }
   canvas.addEventListener('pointerup', (e) => end(e, false))
   canvas.addEventListener('pointercancel', (e) => end(e, true))
+  // capture lost while the pointer is still down (the browser took the gesture, an alert...): treat it as cancelled
+  canvas.addEventListener('lostpointercapture', (e) => { if (pts.has(e.pointerId)) end(e, true) })
   canvas.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && !pts.size) h.onHover(-1, -1) })
   canvas.addEventListener('wheel', (e) => { const [x, y] = pos(e); if (h.onZoom(Math.exp(-e.deltaY * 0.0015), x, y)) e.preventDefault() }, { passive: false })
-  canvas.addEventListener('contextmenu', (e) => { e.preventDefault(); const [x, y] = pos(e); h.onAlt(x, y) })
+  // Right-click deletes. A long press on a touch screen also fires contextmenu: just block the menu there,
+  // so holding a finger still on a joint never deletes a beam.
+  canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault()
+    const touchy = (e.pointerType && e.pointerType !== 'mouse') || e.sourceCapabilities?.firesTouchEvents || [...pts.keys()].length > 0
+    if (touchy) return
+    const [x, y] = pos(e); h.onAlt(x, y)
+  })
   return { cancel() { if (main && main.mode === 'grab') h.onGrabCancel(); main = null; pts.clear(); pinch = 0 } }
 }

@@ -1,6 +1,6 @@
 // Rickety entry point: owns the flow (title, build, run, result), the frame loop, building input, and turning
 // physics events into sound and particles. The rules live in physics.js / design.js / daily.js / save.js.
-import { C, makeStore, wireChrome } from '../kit/kit.js'
+import { C, makeStore, wireChrome, haptic } from '../kit/kit.js'
 import { LEVELS, SANDBOX, CHAPTERS, makeLevel } from './levels.js'
 import { H, MATERIALS, createWorld, step, summary, timeLimit, countParcels } from './physics.js'
 import { canAdd, checkDesign, cleanDesign, designCost, makeHistory, snapTarget, hasJoint, beamLen, jointsOf } from './design.js'
@@ -25,7 +25,7 @@ const G = {
   screen: 'title', mode: 'campaign', index: 0, date: '', level: null, key: '', label: '',
   design: { beams: [] }, hist: makeHistory(), phase: 'build', world: null, preview: null,
   mat: 'plank', sel: -1, cursor: null, pending: null, drag: null, hover: null, loupe: null,
-  zoom: 1, panX: 0, panY: 0, camZ: 1, camX: 0, camY: 0, speed: save.data.speed, acc: 0, resultShown: false, frozenAt: 0, moods: [], said: [], uiTick: 0, dustT: 0, time: 0,
+  zoom: 1, panX: 0, panY: 0, autoZoom: true, camZ: 1, camX: 0, camY: 0, speed: save.data.speed, acc: 0, resultShown: false, frozenAt: 0, moods: [], said: [], uiTick: 0, dustT: 0, time: 0,
 }
 
 // ---------- title screen: a little bridge that carts keep crossing
@@ -62,11 +62,9 @@ function openLevel(mode, level, key, label) {
   G.hist = makeHistory(); G.phase = 'build'; G.world = null
   G.preview = createWorld(level, { beams: [] })
   G.mat = level.materials[0]; G.sel = -1; G.cursor = null; G.pending = null; G.drag = null; G.hover = null; G.loupe = null
-  G.panX = G.panY = 0; G.moods = []
+  G.moods = []
   // on a narrow screen start zoomed to the part you build in; the run zooms back out to show everything
-  const v = level.view, b = level.build, size = R.size
-  G.zoom = size[0] < size[1] ? Math.max(1, Math.min(2.2, (v[2] - v[0]) / (b[2] - b[0] + 2))) : 1
-  if (G.zoom > 1) G.panX = (b[0] + b[2]) / 2 - (v[0] + v[2]) / 2
+  fitZoom(); G.autoZoom = true
   G.camZ = G.zoom; G.camX = G.panX; G.camY = 0
   fx.clear(); ui.hide()
   save.data.cur = { mode, id: mode === 'daily' ? G.date : level.id }; save.save()
@@ -96,12 +94,24 @@ function paint() {
   if (G.phase === 'build') ui.tools({ show: true, materials: L.materials, mat: G.mat, canUndo: G.hist.canUndo, canRedo: G.hist.canRedo, hasSel: G.sel >= 0, canGo: L.budget == null || cost <= L.budget, empty: !G.design.beams.length })
   else ui.tools({ show: false })
 }
+/** Start zoom and pan for a level: on a tall screen, zoomed to the part you build in. */
+function fitZoom() {
+  const v = G.level.view, b = G.level.build, size = R.size
+  G.zoom = size[0] < size[1] ? Math.max(1, Math.min(2.2, (v[2] - v[0]) / (b[2] - b[0] + 2))) : 1
+  G.panX = G.zoom > 1 ? (b[0] + b[2]) / 2 - (v[0] + v[2]) / 2 : 0; G.panY = 0
+}
+let lastShape = ''
 function layout() {
   R.resize()
-  const bar = stage.querySelector(G.phase === 'sim' ? '.simbar' : '.tools')
-  R.inset.top = G.screen === 'play' ? 54 : 8
-  R.inset.bottom = G.screen === 'play' && bar && !bar.hidden ? bar.offsetHeight + 4 : 8
+  // The canvas is inset by the safe areas in full screen, so measure the bars against the canvas itself.
+  const bar = stage.querySelector(G.phase === 'sim' ? '.simbar' : '.tools'), hud = stage.querySelector('.hud')
+  const c = canvas.getBoundingClientRect()
+  R.inset.top = G.screen === 'play' && hud && !hud.hidden ? Math.max(8, hud.getBoundingClientRect().bottom - c.top + 6) : 8
+  R.inset.bottom = G.screen === 'play' && bar && !bar.hidden ? Math.max(8, c.bottom - bar.getBoundingClientRect().top + 4) : 8
   R.inset.left = 0
+  // Turning the phone (or going full screen) re-fits the start zoom, unless the player has zoomed or panned themselves.
+  const shape = R.size[0] < R.size[1] ? 'tall' : 'wide'
+  if (shape !== lastShape) { lastShape = shape; if (G.screen === 'play' && G.phase === 'build' && G.autoZoom) { fitZoom(); G.camZ = G.zoom; G.camX = G.panX; G.camY = 0 } }
   const panel = ui.screen === 'title' && stage.querySelector('.overlay .panel')
   if (panel) { // keep the title's demo bridge clear of the title card
     const a = stage.getBoundingClientRect(), b = panel.getBoundingClientRect()
@@ -117,7 +127,7 @@ function placeBeam(ax, ay, bx, by) {
   if (!r.ok) { audio.nope(); if (WHY[r.reason]) ui.toast(r.reason === 'full' ? 'That is a lot of beams. No room for more.' : `Can't put a beam there: ${WHY[r.reason]}.`, 1800); return false }
   G.hist.push(G.design)
   G.design.beams.push([ax, ay, bx, by, G.mat])
-  audio.place(beamLen(ax, ay, bx, by), G.mat)
+  audio.place(beamLen(ax, ay, bx, by), G.mat); haptic(10)
   fx.dust(bx, by, 4)
   G.sel = -1
   changed()
@@ -146,7 +156,7 @@ function zoomAt(f, px, py) {
   const z = Math.max(1, Math.min(5, G.zoom * f))
   if (z === old) return false
   const [wx, wy] = R.toWorld(px, py)
-  G.zoom = z; R.setCamera(G.level, G.zoom, G.panX, G.panY)
+  G.zoom = z; G.autoZoom = false; R.setCamera(G.level, G.zoom, G.panX, G.panY)
   const [wx2, wy2] = R.toWorld(px, py)
   G.panX += wx - wx2; G.panY += wy - wy2
   ;[G.panX, G.panY] = R.setCamera(G.level, G.zoom, G.panX, G.panY)
@@ -199,6 +209,11 @@ createInput(canvas, {
     const d = G.drag
     if (!d) return
     if (!moved) { d.tx = null; G.loupe = null; return }
+    // dragging onto the toolbar or the HUD (or off the canvas) cancels: let go there and nothing is built
+    const off = py > R.size[1] - R.inset.bottom + 4 || py < R.inset.top - 6 || px < 0 || px > R.size[0]
+    if (off !== !!d.off) { d.off = off; ui.toast(off ? 'Let go here to cancel the beam.' : '', 0) }
+    if (off) { d.tx = null; G.loupe = null; return }
+    if (!d.cleared) { d.cleared = true; ui.toast('') } // the hint toast would sit on top of the loupe
     // on touch the target floats above the finger, so the finger never covers it
     const [wx, wy] = R.toWorld(px, py - (type === 'mouse' ? 0 : 46))
     if (Math.hypot(wx - d.ax, wy - d.ay) < 0.45) { d.tx = null; G.loupe = null; return }
@@ -209,10 +224,11 @@ createInput(canvas, {
     const d = G.drag
     G.drag = null; G.loupe = null
     if (!d) return
+    if (d.off) { ui.toast(''); audio.undo(); return }
     if (d.tx != null) { if (placeBeam(d.ax, d.ay, d.tx, d.ty)) { G.pending = null; G.cursor = type === 'mouse' ? null : G.cursor } return }
     if (!moved) tapJoint(d.ax, d.ay)
   },
-  onGrabCancel() { G.drag = null; G.loupe = null },
+  onGrabCancel() { if (G.drag && G.drag.off) ui.toast(''); G.drag = null; G.loupe = null },
   onTap(px, py, type) {
     if (!building()) return
     const [wx, wy] = R.toWorld(px, py)
@@ -233,7 +249,7 @@ createInput(canvas, {
   },
   onPan(dx, dy) {
     if (G.screen !== 'play' || G.phase !== 'build' || ui.screen) return
-    G.panX -= dx / R.cam.scale; G.panY += dy / R.cam.scale
+    G.panX -= dx / R.cam.scale; G.panY += dy / R.cam.scale; G.autoZoom = false
   },
   onZoom(f, px, py) { if (G.screen !== 'play' || G.phase !== 'build' || ui.screen) return false; return zoomAt(f, px, py) },
   onHover(px, py) { G.hover = building() && px >= 0 && !G.drag ? jointNear(px, py, 'mouse') : null; canvas.style.cursor = G.hover ? 'grab' : '' },
@@ -375,7 +391,7 @@ function handleEvents(W) {
     switch (e.type) {
       case 'snap':
         fx.splinters(e.x, e.y, e.mat, e.mat === 'rope' ? 4 : 10)
-        if (play) { audio.snap(e.mat); fx.shake(0.35); if (W.broken <= 2) fx.text(e.x, e.y, 'SNAP!', C.yellow, 20) }
+        if (play) { audio.snap(e.mat); fx.shake(0.35); if (W.broken <= 1) haptic(25); if (W.broken <= 2) fx.text(e.x, e.y, 'SNAP!', C.yellow, 20) }
         break
       case 'splash':
         fx.splash(e.x, e.y, kind, e.kind === 1 ? 1.5 : e.kind === 2 ? 0.8 : 0.6)
@@ -384,7 +400,7 @@ function handleEvents(W) {
       case 'goal': fx.confetti(e.x, e.y + 1, 26); if (play) { audio.goal(); fx.text(e.x, e.y + 1.6, 'Made it!', C.mint, 22) } break
       case 'lost': if (play) fx.text(e.x, W.pitY + 0.5, kind === 'lava' ? 'tsss' : kind === 'mist' ? 'aaaah' : 'glub', C.paper, 20); break
       case 'stuck': if (play) fx.text(e.x, e.y + 1.6, 'stuck!', C.pink, 20); break
-      case 'over': if (play) { if (e.success) { audio.fanfare(); fx.confetti(W.vehicles[0].x, W.vehicles[0].y + 1, 50) } else audio.fail() } break
+      case 'over': if (play) { haptic(e.success ? [15, 60, 15] : 60); if (e.success) { audio.fanfare(); fx.confetti(W.vehicles[0].x, W.vehicles[0].y + 1, 50) } else audio.fail() } break
     }
   }
   ev.length = 0

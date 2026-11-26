@@ -9,6 +9,13 @@
   <link rel="canonical" href="https://games.oddvale.com/rickety/" />
   <meta name="theme-color" content="#17131f" />
   <link rel="icon" href="kit/favicon.svg" type="image/svg+xml" />
+  <!-- "Add to Home Screen" opens the whole arcade like an app (no browser bars), from any game page. -->
+  <link rel="manifest" href="../site.webmanifest" />
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Oddvale Games" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Oddvale Games" />
   <meta property="og:title" content="Rickety — Oddvale Games" />
@@ -61,7 +68,9 @@
         </ul></div>
         <div class="card yellow"><h2>Controls</h2><ul>
           <li><b>Mouse or touch:</b> drag from a joint or an orange anchor to lay a beam. Or tap a joint, then tap where the beam should end.</li>
+          <li>On a phone the beam's end floats just above your finger, with a magnified view in the corner. Changed your mind? Drag back to the joint, or onto the toolbar, and let go.</li>
           <li>Tap a beam to select it, then delete it or pick a material to swap it. Right-click deletes. Drag empty space to pan, pinch or scroll to zoom.</li>
+          <li><b>Phone:</b> tap <b>Play full screen</b> under the game. It works upright or sideways.</li>
           <li><b>Keyboard:</b> <kbd>1</kbd>–<kbd>4</kbd> material, arrows move the cursor, <kbd>Enter</kbd> starts and ends a beam, <kbd>X</kbd> picks a beam at the cursor, <kbd>Del</kbd> removes it.</li>
           <li><kbd>Z</kbd> undo, <kbd>Y</kbd> redo, <kbd>Space</kbd> go or stop, <kbd>S</kbd> speed, <kbd>Esc</kbd> menu.</li>
         </ul></div>
@@ -73,7 +82,7 @@
 
   <footer class="footer">
     <div class="wrap">
-      <span>Rickety v1.1.0 · An <a href="https://oddvale.com">Oddvale</a> game. Your progress is saved in this browser only.</span>
+      <span>Rickety v1.2.0 · An <a href="https://oddvale.com">Oddvale</a> game. Your progress is saved in this browser only.</span>
       <span><a href="../">More games</a> · <a href="https://github.com/JohnGarrisonDev/rickety/issues/new?template=feedback.yml" target="_blank" rel="noopener">Feedback</a> · <a href="../privacy/">Privacy</a> ·<a href="https://github.com/JohnGarrisonDev/rickety">Source</a></span>
     </div>
   </footer>

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.0 (2026-11-26)
+Plays better on phones.
+- Full screen on every phone, iPhone included: tap "Play full screen" under the game. It works upright or sideways, and the view re-fits when you turn the phone.
+- Changed your mind mid-drag? Drag onto the toolbar (or back to the joint) and let go: no beam is built.
+- Holding a finger still on a joint no longer deletes a beam (a long press used to count as a right-click on some phones).
+- The hint bubble gets out of the way of the magnifier while you drag.
+- Bigger menu and material buttons, pressed states on every button, and a small buzz when you place a beam, a beam snaps, or the run ends (Android).
+- The daily result card and its vote fit on small phones.
+- The game bars keep clear of notches and the home bar in full screen.
+
 ## 1.1.0 (2026-11-25)
 - Tell us how hard today's daily gap was with one tap, and see how cheap your bridge was against everyone else's today. Anonymous: nothing about you is stored.
 - A new "Tell us" card under the game: thumbs up or down and a few one-tap notes, no account needed.
